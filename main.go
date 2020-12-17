@@ -18,22 +18,22 @@ type Config struct {
 }
 
 var (
-	//NuAvenueid stores address of Nu Avenue
-	NuAvenueid int64 = -1001261951893 //-1001216791696  //<-Here goes id of Nu Avenue chat->
-	//NuMarketid stores address of Nu Avenue
-	NuMarketid int64 = -1001492443891 // <-Here goes id of Nu Market chat->
+	//FirstID stores address of First Chat
+	FirstID int64 = -00000000 //<-Here goes id of First chat->
+	//SecondID stores address of Second Chat
+	SecondID int64 = -00000000 // <-Here goes id of Second chat->
 	id         int64 = 0
 	now        time.Time
-	//AvenueTimer stores limit time for avenue to avoid spam
-	AvenueTimer map[int64]time.Time
-	//MarketTimer stores limit time for market to avoid spam
-	MarketTimer map[int64]time.Time
+	//FirstChatTimer stores limit time for first chat to avoid spam
+	FirstChatTimer map[int64]time.Time
+	//SecondChatTimer stores limit time for second chat to avoid spam
+	SecondChatTimer map[int64]time.Time
 )
 
 var chatsTab = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("NU Avenue", "Message is send to Nu Avenue"),
-		tgbotapi.NewInlineKeyboardButtonData("NU Doodle", "Message is send to Nu Doodle"),
+		tgbotapi.NewInlineKeyboardButtonData("First Chat", "Message is send to First Chat"),
+		tgbotapi.NewInlineKeyboardButtonData("Second Chat", "Message is send to Second Chat"),
 	),
 )
 var nullTab = tgbotapi.NewInlineKeyboardMarkup()
@@ -106,43 +106,43 @@ func reply(update *tgbotapi.Update, bot *tgbotapi.BotAPI) {
 
 func create(update tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	if update.CallbackQuery != nil {
-		if strings.Contains(update.CallbackQuery.Data, "Nu Avenue") {
-			if _, ok := AvenueTimer[update.CallbackQuery.Message.Chat.ID]; ok {
-				if time.Until(AvenueTimer[update.CallbackQuery.Message.Chat.ID]) < -5*time.Second {
-					AvenueTimer[update.CallbackQuery.Message.Chat.ID] = time.Now()
-					id = NuAvenueid
+		if strings.Contains(update.CallbackQuery.Data, "First Chat") {
+			if _, ok := FirstChatTimer[update.CallbackQuery.Message.Chat.ID]; ok {
+				if time.Until(FirstChatTimer[update.CallbackQuery.Message.Chat.ID]) < -5*time.Second {
+					FirstChatTimer[update.CallbackQuery.Message.Chat.ID] = time.Now()
+					id = FirstID
 					SendMessage(update.CallbackQuery, bot)
 					bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
 					edit := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 					bot.Send(edit)
 				} else {
-					n := (float64)(time.Until(AvenueTimer[update.CallbackQuery.Message.Chat.ID]) / time.Second)
+					n := (float64)(time.Until(FirstChatTimer[update.CallbackQuery.Message.Chat.ID]) / time.Second)
 					bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "wait "+strconv.Itoa(30-(int)(math.Abs(n)))+" seconds please"))
 				}
 			} else {
-				AvenueTimer[update.CallbackQuery.Message.Chat.ID] = time.Now()
-				id = NuAvenueid
+				FirstChatTimer[update.CallbackQuery.Message.Chat.ID] = time.Now()
+				id = FirstID
 				SendMessage(update.CallbackQuery, bot)
 				edit := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 				bot.Send(edit)
 				bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
 			}
-		} else if strings.Contains(update.CallbackQuery.Data, "Nu Doodle") {
-			if _, ok := MarketTimer[update.CallbackQuery.Message.Chat.ID]; ok {
-				if time.Until(MarketTimer[update.CallbackQuery.Message.Chat.ID]) < -30*time.Second {
-					MarketTimer[update.CallbackQuery.Message.Chat.ID] = time.Now()
-					id = NuMarketid
+		} else if strings.Contains(update.CallbackQuery.Data, "Second Chat") {
+			if _, ok := SecondChatTimer[update.CallbackQuery.Message.Chat.ID]; ok {
+				if time.Until(SecondChatTimer[update.CallbackQuery.Message.Chat.ID]) < -30*time.Second {
+					SecondChatTimer[update.CallbackQuery.Message.Chat.ID] = time.Now()
+					id = SecondID
 					SendMessage(update.CallbackQuery, bot)
 					edit := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 					bot.Send(edit)
 					bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
 				} else {
-					n := (float64)(time.Until(MarketTimer[update.CallbackQuery.Message.Chat.ID]) / time.Second)
+					n := (float64)(time.Until(SecondChatTimer[update.CallbackQuery.Message.Chat.ID]) / time.Second)
 					bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "wait "+strconv.Itoa(30-(int)(math.Abs(n)))+" seconds please"))
 				}
 			} else {
-				MarketTimer[update.CallbackQuery.Message.Chat.ID] = time.Now()
-				id = NuMarketid
+				SecondChatTimer[update.CallbackQuery.Message.Chat.ID] = time.Now()
+				id = SecondID
 				SendMessage(update.CallbackQuery, bot)
 				edit := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 				bot.Send(edit)
@@ -162,8 +162,8 @@ func create(update tgbotapi.Update, bot *tgbotapi.BotAPI) {
 
 func main() {
 	now = time.Now()
-	AvenueTimer = make(map[int64]time.Time)
-	MarketTimer = make(map[int64]time.Time)
+	FirstChatTimer = make(map[int64]time.Time)
+	SecondChatTimer = make(map[int64]time.Time)
 	file, _ := os.Open("config.json")
 	decoder := json.NewDecoder(file)
 	configuration := Config{}
@@ -183,13 +183,13 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message != nil && (update.Message.Chat.ID == NuAvenueid || update.Message.Chat.ID == NuMarketid) {
+		if update.Message != nil && (update.Message.Chat.ID == FirstID || update.Message.Chat.ID == SecondID) {
 			continue
 		}
 		if update.Message == nil && update.CallbackQuery == nil {
 			continue
 		}
-		if update.Message != nil && update.Message.Chat.ID == NuAvenueid {
+		if update.Message != nil && update.Message.Chat.ID == FirstID {
 			continue
 		}
 		go create(update, bot)
